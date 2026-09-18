@@ -9,9 +9,9 @@
     "cpu_threads":8,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.3227270917,
-    "images_per_sec":49.5774926034,
-    "estimated_epoch_min":2.7899084726,
+    "seconds_per_batch":0.2847038617,
+    "images_per_sec":56.198745972,
+    "estimated_epoch_min":2.4612055709,
     "config":null
   },
   {
@@ -24,9 +24,9 @@
     "cpu_threads":8,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.1525806633,
-    "images_per_sec":104.862566792,
-    "estimated_epoch_min":1.3190280469,
+    "seconds_per_batch":0.0916878246,
+    "images_per_sec":174.5051763394,
+    "estimated_epoch_min":0.792622142,
     "config":null
   },
   {
@@ -39,9 +39,9 @@
     "cpu_threads":8,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.0972151567,
-    "images_per_sec":164.5833895514,
-    "estimated_epoch_min":0.8404047762,
+    "seconds_per_batch":0.0768082121,
+    "images_per_sec":208.3110589681,
+    "estimated_epoch_min":0.6639909919,
     "config":null
   },
   {
@@ -54,9 +54,9 @@
     "cpu_threads":8,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.72535848,
-    "images_per_sec":44.1161175919,
-    "estimated_epoch_min":3.1352864716,
+    "seconds_per_batch":0.5414942209,
+    "images_per_sec":59.095736883,
+    "estimated_epoch_min":2.340552364,
     "config":null
   },
   {
@@ -69,9 +69,9 @@
     "cpu_threads":8,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.2867333217,
-    "images_per_sec":111.601957575,
-    "estimated_epoch_min":1.2393749149,
+    "seconds_per_batch":0.1897831854,
+    "images_per_sec":168.6134624232,
+    "estimated_epoch_min":0.8203180498,
     "config":null
   },
   {
@@ -84,9 +84,9 @@
     "cpu_threads":8,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.146318065,
-    "images_per_sec":218.7016346884,
-    "estimated_epoch_min":0.6324445945,
+    "seconds_per_batch":0.150597811,
+    "images_per_sec":212.4864882194,
+    "estimated_epoch_min":0.6509433509,
     "config":null
   },
   {
@@ -99,9 +99,9 @@
     "cpu_threads":8,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":1.3221847133,
-    "images_per_sec":48.4047344933,
-    "estimated_epoch_min":2.8575028479,
+    "seconds_per_batch":1.1493233929,
+    "images_per_sec":55.6849363681,
+    "estimated_epoch_min":2.4839153223,
     "config":null
   },
   {
@@ -114,9 +114,9 @@
     "cpu_threads":8,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.589625325,
-    "images_per_sec":108.5435059968,
-    "estimated_epoch_min":1.274297024,
+    "seconds_per_batch":0.4004100768,
+    "images_per_sec":159.8361372707,
+    "estimated_epoch_min":0.8653654238,
     "config":null
   },
   {
@@ -129,9 +129,9 @@
     "cpu_threads":8,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.2962179317,
-    "images_per_sec":216.0571429281,
-    "estimated_epoch_min":0.6401855768,
+    "seconds_per_batch":0.3158776935,
+    "images_per_sec":202.6100649404,
+    "estimated_epoch_min":0.6826742132,
     "config":null
   },
   {
@@ -144,9 +144,9 @@
     "cpu_threads":8,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":2.776168245,
-    "images_per_sec":46.1067156973,
-    "estimated_epoch_min":2.9999245137,
+    "seconds_per_batch":2.1049641729,
+    "images_per_sec":60.8086359131,
+    "estimated_epoch_min":2.2746220926,
     "config":null
   },
   {
@@ -159,9 +159,9 @@
     "cpu_threads":8,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.9126285017,
-    "images_per_sec":140.2542214782,
-    "estimated_epoch_min":0.9861854082,
+    "seconds_per_batch":0.801068197,
+    "images_per_sec":159.7866454775,
+    "estimated_epoch_min":0.8656334593,
     "config":null
   },
   {
@@ -174,9 +174,9 @@
     "cpu_threads":8,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.71447011,
-    "images_per_sec":179.1537507425,
-    "estimated_epoch_min":0.7720556566,
+    "seconds_per_batch":0.6766807193,
+    "images_per_sec":189.1586332314,
+    "estimated_epoch_min":0.7312204804,
     "config":null
   },
   {
@@ -189,9 +189,9 @@
     "cpu_threads":4,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.12501618,
-    "images_per_sec":255.9668676493,
-    "estimated_epoch_min":0.5403694155,
+    "seconds_per_batch":0.1694058325,
+    "images_per_sec":188.8955033284,
+    "estimated_epoch_min":0.7322390646,
     "config":null
   },
   {
@@ -204,9 +204,9 @@
     "cpu_threads":8,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.1552224417,
-    "images_per_sec":206.155757224,
-    "estimated_epoch_min":0.6709328351,
+    "seconds_per_batch":0.1700970103,
+    "images_per_sec":188.1279391121,
+    "estimated_epoch_min":0.7352266087,
     "config":null
   },
   {
@@ -219,9 +219,9 @@
     "cpu_threads":12,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.15362346,
-    "images_per_sec":208.3015185311,
-    "estimated_epoch_min":0.6640214034,
+    "seconds_per_batch":0.1538035772,
+    "images_per_sec":208.0575795156,
+    "estimated_epoch_min":0.6647999414,
     "config":null
   },
   {
@@ -234,9 +234,9 @@
     "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.157902065,
-    "images_per_sec":202.6572610052,
-    "estimated_epoch_min":0.6825152278,
+    "seconds_per_batch":0.1414596422,
+    "images_per_sec":226.2129290188,
+    "estimated_epoch_min":0.611444568,
     "config":null
   },
   {
@@ -246,12 +246,12 @@
     "batch_size":32,
     "num_workers":4,
     "img_size":96,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.103650815,
-    "images_per_sec":308.7288797494,
-    "estimated_epoch_min":0.4480198509,
+    "seconds_per_batch":0.1253970154,
+    "images_per_sec":255.1894866829,
+    "estimated_epoch_min":0.542015537,
     "config":null
   },
   {
@@ -261,12 +261,12 @@
     "batch_size":32,
     "num_workers":4,
     "img_size":128,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.1517542567,
-    "images_per_sec":210.8672316871,
-    "estimated_epoch_min":0.6559419667,
+    "seconds_per_batch":0.1485717874,
+    "images_per_sec":215.3840952631,
+    "estimated_epoch_min":0.6421860746,
     "config":null
   },
   {
@@ -276,12 +276,12 @@
     "batch_size":32,
     "num_workers":4,
     "img_size":160,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.18768562,
-    "images_per_sec":170.497878314,
-    "estimated_epoch_min":0.8112515419,
+    "seconds_per_batch":0.1866966987,
+    "images_per_sec":171.4009954723,
+    "estimated_epoch_min":0.8069770323,
     "config":null
   },
   {
@@ -291,12 +291,12 @@
     "batch_size":32,
     "num_workers":4,
     "img_size":256,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.6145886567,
-    "images_per_sec":52.0673456187,
-    "estimated_epoch_min":2.6564954488,
+    "seconds_per_batch":0.5499856519,
+    "images_per_sec":58.1833360352,
+    "estimated_epoch_min":2.3772556902,
     "config":null
   },
   {
@@ -306,12 +306,12 @@
     "batch_size":32,
     "num_workers":4,
     "img_size":96,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"OFF",
     "dataset_images":8299,
-    "seconds_per_batch":0.1234636667,
-    "images_per_sec":259.1855633644,
-    "estimated_epoch_min":0.5336588384,
+    "seconds_per_batch":0.118201368,
+    "images_per_sec":270.7244471529,
+    "estimated_epoch_min":0.5109131005,
     "config":null
   },
   {
@@ -321,12 +321,12 @@
     "batch_size":32,
     "num_workers":4,
     "img_size":96,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.1319387233,
-    "images_per_sec":242.5368321866,
-    "estimated_epoch_min":0.570291388,
+    "seconds_per_batch":0.1166312869,
+    "images_per_sec":274.3689181495,
+    "estimated_epoch_min":0.5041265884,
     "config":null
   },
   {
@@ -336,12 +336,12 @@
     "batch_size":16,
     "num_workers":2,
     "img_size":128,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.086749444,
-    "images_per_sec":184.4392224577,
-    "estimated_epoch_min":0.7499308706,
+    "seconds_per_batch":0.1006156248,
+    "images_per_sec":159.0210271041,
+    "estimated_epoch_min":0.8698011149,
     "config":"E1_b16_w2_s128"
   },
   {
@@ -351,12 +351,12 @@
     "batch_size":32,
     "num_workers":0,
     "img_size":128,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.460859841,
-    "images_per_sec":69.435427332,
-    "estimated_epoch_min":1.9920186565,
+    "seconds_per_batch":1.0650520193,
+    "images_per_sec":30.0454808041,
+    "estimated_epoch_min":4.6035764103,
     "config":"E2_b32_w0_s128"
   },
   {
@@ -366,12 +366,12 @@
     "batch_size":32,
     "num_workers":2,
     "img_size":128,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.206268893,
-    "images_per_sec":155.1373041985,
-    "estimated_epoch_min":0.8915758036,
+    "seconds_per_batch":0.1873464276,
+    "images_per_sec":170.8065662357,
+    "estimated_epoch_min":0.8097854182,
     "config":"E3_b32_w2_s128"
   },
   {
@@ -381,12 +381,12 @@
     "batch_size":64,
     "num_workers":2,
     "img_size":128,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.419657589,
-    "images_per_sec":152.5052844928,
-    "estimated_epoch_min":0.9069631071,
+    "seconds_per_batch":0.4165843623,
+    "images_per_sec":153.6303466651,
+    "estimated_epoch_min":0.900321256,
     "config":"E4_b64_w2_s128"
   },
   {
@@ -396,12 +396,12 @@
     "batch_size":128,
     "num_workers":0,
     "img_size":128,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":1.923600268,
-    "images_per_sec":66.5418913323,
-    "estimated_epoch_min":2.0786404459,
+    "seconds_per_batch":4.2625240622,
+    "images_per_sec":30.0291559957,
+    "estimated_epoch_min":4.6060790615,
     "config":"E5_b128_w0_s128"
   },
   {
@@ -411,12 +411,12 @@
     "batch_size":16,
     "num_workers":2,
     "img_size":96,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.088839136,
-    "images_per_sec":180.1008060226,
-    "estimated_epoch_min":0.7679958226,
+    "seconds_per_batch":0.0810270485,
+    "images_per_sec":197.4649244184,
+    "estimated_epoch_min":0.7004619533,
     "config":"E6_b16_w2_s96"
   },
   {
@@ -426,12 +426,12 @@
     "batch_size":32,
     "num_workers":2,
     "img_size":96,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.181588209,
-    "images_per_sec":176.2228956177,
-    "estimated_epoch_min":0.784896118,
+    "seconds_per_batch":0.1808747503,
+    "images_per_sec":176.918005161,
+    "estimated_epoch_min":0.7818122669,
     "config":"E7_b32_w2_s96"
   },
   {
@@ -441,12 +441,12 @@
     "batch_size":64,
     "num_workers":2,
     "img_size":96,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.365514395,
-    "images_per_sec":175.095703139,
-    "estimated_epoch_min":0.789948949,
+    "seconds_per_batch":0.3670019556,
+    "images_per_sec":174.3859917459,
+    "estimated_epoch_min":0.7931638619,
     "config":"E8_b64_w2_s96"
   },
   {
@@ -456,12 +456,12 @@
     "batch_size":16,
     "num_workers":2,
     "img_size":160,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.124929592,
-    "images_per_sec":128.072138425,
-    "estimated_epoch_min":1.0799902958,
+    "seconds_per_batch":0.117758634,
+    "images_per_sec":135.8711413158,
+    "estimated_epoch_min":1.0179988578,
     "config":"E9_b16_w2_s160"
   },
   {
@@ -471,12 +471,12 @@
     "batch_size":32,
     "num_workers":2,
     "img_size":160,
-    "cpu_threads":4,
+    "cpu_threads":14,
     "augmentation":"ON",
     "dataset_images":8299,
-    "seconds_per_batch":0.246606102,
-    "images_per_sec":129.7615904087,
-    "estimated_epoch_min":1.0659291878,
+    "seconds_per_batch":0.2254687743,
+    "images_per_sec":141.9265265989,
+    "estimated_epoch_min":0.9745652908,
     "config":"E10_b32_w2_s160"
   }
 ]

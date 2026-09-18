@@ -3,35 +3,35 @@ LCC-FASD LOCAL PERFORMANCE BENCHMARK
 
 PyTorch: 2.14.0+xpu
 Torchvision: 0.29.0+xpu
-OS: Windows-11-10.0.26200-SP0
+OS: Linux-7.0.0-22-generic-x86_64-with-glibc2.43
 CPU logical processors: 14
-RAM GB: 15.43
+RAM GB: 14.55
 XPU available: True
 XPU device: Intel(R) Graphics
 Training images: 8299
 
 FINAL END-TO-END CONFIG
 -----------------------
-Config: E1_b16_w2_s128
+Config: E6_b16_w2_s96
 Device: xpu
 Batch size: 16
 Workers: 2
-CPU threads: 4
-Image size: 128
+CPU threads: 14
+Image size: 96
 Augmentation: ON
-Throughput: 184.4392 images/s
-Estimated epoch: 0.7499 min
-Estimated 50 epochs: 37.4965 min
-Estimated 50 epochs: 0.6249 hours
+Throughput: 197.4649 images/s
+Estimated epoch: 0.7005 min
+Estimated 50 epochs: 35.0231 min
+Estimated 50 epochs: 0.5837 hours
 
 COMPUTE VS END-TO-END
 ---------------------
-Compute-only: 544.6381 images/s
-End-to-end: 265.5865 images/s
-E2E/compute: 48.76%
+Compute-only: 531.1692 images/s
+End-to-end: 265.3726 images/s
+E2E/compute: 49.96%
 
 CPU REFERENCE
 -------------
-CPU throughput: 86.3536 images/s
-XPU throughput: 148.9430 images/s
-XPU/CPU ratio: 1.7248x
+CPU throughput: 72.1988 images/s
+XPU throughput: 164.3497 images/s
+XPU/CPU ratio: 2.2764x
