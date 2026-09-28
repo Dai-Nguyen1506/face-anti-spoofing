@@ -1,2 +1,3 @@
 models/model1_custom_cnn_best.pt filter=lfs diff=lfs merge=lfs -text
 models/model2_transfer_best.pt filter=lfs diff=lfs merge=lfs -text
+*_best.pt filter=lfs diff=lfs merge=lfs -text
