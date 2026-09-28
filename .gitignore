@@ -1,3 +1,6 @@
 .venv/
 dataset/
 __pycache__/
+checkpoint/
+*.onnx
+*_latest.pt
