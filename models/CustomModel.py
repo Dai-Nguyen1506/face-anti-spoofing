@@ -1,8 +1,7 @@
 from keras.models import Sequential
 from keras.layers import Input, Conv2D, SeparableConv2D, BatchNormalization, Activation, MaxPooling2D, GlobalAveragePooling2D, Dropout, Dense
 
-
-def custome_model(input_shape=(224, 224, 3), num_classes=1):
+def custom_model(input_shape=(224, 224, 3), num_classes=1):
     model = Sequential()
 
     model.add(Input(shape=input_shape))
