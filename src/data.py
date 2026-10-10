@@ -27,13 +27,12 @@ def get_data_stats(base_dir):
         paths[split] = split_dir
         stats[split] = {}
         
-        if os.path.exists(split_dir):
-            for cls in classes:
-                cls_dir = os.path.join(split_dir, cls)
-                if os.path.exists(cls_dir):
-                    stats[split][cls] = len(os.listdir(cls_dir))
-                else:
-                    stats[split][cls] = 0
+        for cls in classes:
+            cls_dir = os.path.join(split_dir, cls)
+            if os.path.exists(cls_dir):
+                stats[split][cls] = len(os.listdir(cls_dir))
+            else:
+                stats[split][cls] = 0
                     
     return paths, classes, stats
 

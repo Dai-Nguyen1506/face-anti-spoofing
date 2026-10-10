@@ -146,13 +146,13 @@ def multibranch_model(input_shape=(224, 224, 3), num_classes=1):
     texture_branch = create_branch((h, w, TEXTURE_CHANNELS), name="texture_branch")
     texture_vector = pool(texture_branch(texture))
 
-    # Nhánh 2: Color (Cr, Cb, S, V, A, B) ở độ phân giải một nửa
+    # Nhánh 2: Color (Cr, Cb, S, V, A, B)
     color = Lambda(color_channels, output_shape=(h, w, COLOR_CHANNELS), name="color_channels")(inputs)
     color = Normalization(name="color_norm")(color)
     color_branch = create_branch((h, w, COLOR_CHANNELS), name="color_branch")
     color_vector = pool(color_branch(color))
 
-    # Nhánh 3: RGB ở độ phân giải một nửa (conv đầu 7x7 và khối cuối giãn nở -> nhìn toàn cục)
+    # Nhánh 3: RGB (conv đầu 7x7 và khối cuối giãn nở -> nhìn toàn cục)
     rgb_low = Lambda(rgb_downsample, output_shape=(h, w, 3), name="rgb_low")(inputs)
     rgb_branch = create_branch((h, w, 3), name="rgb_branch", first_kernel=7, dilation=4)
     rgb_vector = pool(rgb_branch(rgb_low))

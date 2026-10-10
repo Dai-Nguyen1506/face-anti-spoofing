@@ -4,6 +4,7 @@ from sklearn.metrics import accuracy_score
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.callbacks import Callback
+from keras.models import load_model
 from sklearn.metrics import (
     confusion_matrix, 
     roc_curve, 
@@ -13,10 +14,11 @@ from sklearn.metrics import (
 )
 
 class MetricsCallback(Callback):
-    def __init__(self, val_dataset, threshold_path=None):
+    def __init__(self, val_dataset, threshold_path=None, output_name="final_output"):
         super().__init__()
         self.val_dataset = val_dataset
         self.threshold_path = threshold_path
+        self.output_name = output_name
         self.y_true = np.concatenate([y for x, y in val_dataset], axis=0).flatten()
         self.best_acer = float('inf')
         self.best_threshold = 0.5
@@ -25,7 +27,10 @@ class MetricsCallback(Callback):
         logs = logs or {}
         
         # Dự đoán toàn bộ tập Validation (tắt verbose để đỡ rác terminal)
-        y_pred_probs = self.model.predict(self.val_dataset, verbose=0).flatten()
+        preds = self.model.predict(self.val_dataset, verbose=0)
+        if isinstance(preds, dict):  # mô hình nhiều đầu ra: lấy đầu ra cuối cùng
+            preds = preds[self.output_name]
+        y_pred_probs = preds.flatten()
         
         # Tính toán EER và tìm ngưỡng tối ưu (Threshold)
         fpr, tpr, thresholds = roc_curve(self.y_true, y_pred_probs)
@@ -74,9 +79,10 @@ def plot_training_history(history_dict, output=None):
     ax1.legend()
     ax1.grid(True, linestyle='--', alpha=0.6)
 
-    # Accurancy
-    ax2.plot(history_dict['accuracy'], label='Train Accuracy', color='blue', marker='o')
-    ax2.plot(history_dict['val_accuracy'], label='Val Accuracy', color='red', marker='o')
+    # Accuracy (mô hình nhiều đầu ra thì lấy đầu ra cuối cùng)
+    acc_key = 'final_output_accuracy' if 'final_output_accuracy' in history_dict else 'accuracy'
+    ax2.plot(history_dict[acc_key], label='Train Accuracy', color='blue', marker='o')
+    ax2.plot(history_dict['val_' + acc_key], label='Val Accuracy', color='red', marker='o')
     ax2.set_title('2. Training & Validation Accuracy')
     ax2.set_xlabel('Epochs')
     ax2.legend()
@@ -164,62 +170,38 @@ def evaluate_model(y_test, y_val, threshold, output=None):
         
     plt.show()
 
-def compare_models(model_names, y_probs, y_trues):
+
+def calculate_metrics(y_true, y_prob, threshold):
     """
-    So sánh nhiều mô hình và in ra bảng DataFrame đẹp mắt.
-    Tính toán threshold EER cục bộ cho từng model để report.
+    Tính toán các chỉ số EER, APCER, BPCER, ACER, AUC, ACC dựa trên nhãn thực tế và xác suất dự đoán.
     """
-    results = []
-    for name, y_prob, y_true in zip(model_names, y_probs, y_trues):
-        fpr, tpr, thresholds = roc_curve(y_true, y_prob)
-        fnr = 1 - tpr
-        eer_idx = np.nanargmin(np.absolute(fnr - fpr))
-        
-        eer = (fpr[eer_idx] + fnr[eer_idx]) / 2
-        best_thresh = thresholds[eer_idx]
-        if np.isinf(best_thresh) or best_thresh > 1.0:
-            best_thresh = 1.0
-            
-        y_pred = (y_prob >= best_thresh).astype(int)
-        cm = confusion_matrix(y_true, y_pred)
-        if cm.shape == (2, 2):
-            tn, fp, fn, tp = cm.ravel()
-        else:
-            tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
-            
-        apcer = fn / (fn + tp) if (fn + tp) > 0 else 0.0
-        bpcer = fp / (fp + tn) if (fp + tn) > 0 else 0.0
-        acer = (apcer + bpcer) / 2
-        
+    y_pred = (y_prob >= threshold).astype(int)
+    attack_samples = y_true == 1
+    apcer = np.mean(y_pred[attack_samples] == 0) if np.any(attack_samples) else 0.0
+
+    real_samples = y_true == 0
+    bpcer = np.mean(y_pred[real_samples] == 1) if np.any(real_samples) else 0.0
+
+    acer = (apcer + bpcer) / 2
+    acc = accuracy_score(y_true, y_pred)
+
+
+    if len(np.unique(y_true)) > 1:
         auc = roc_auc_score(y_true, y_prob)
-        acc = accuracy_score(y_true, y_pred)
-        
-        results.append({
-            "Model": name,
-            "EER (%)": eer * 100,
-            "APCER (%)": apcer * 100,
-            "BPCER (%)": bpcer * 100,
-            "ACER (%)": acer * 100,
-            "AUC": auc,
-            "ACC (%)": acc * 100
-        })
-        
-    df = pd.DataFrame(results)
-    
-    try:
-        from IPython.display import display
-        # Tô đậm 3 cột cuối (ACER, AUC, ACC)
-        styled_df = df.style.apply(lambda col: ['font-weight: bold; color: #d62828' if col.name in ['ACER (%)', 'AUC', 'ACC (%)'] else '' for _ in col], axis=0)
-        styled_df = styled_df.format({
-            "EER (%)": "{:.2f}",
-            "APCER (%)": "{:.2f}",
-            "BPCER (%)": "{:.2f}",
-            "ACER (%)": "{:.2f}",
-            "AUC": "{:.4f}",
-            "ACC (%)": "{:.2f}"
-        })
-        display(styled_df)
-    except ImportError:
-        print(df)
-        
-    return df
+
+        fpr, tpr, _ = roc_curve(y_true, y_prob)
+        fnr = 1 - tpr
+        eer = fpr[np.argmin(np.absolute(fnr - fpr))]
+    else:
+        auc = 0.0
+        eer = 0.0
+
+
+    return {
+        "EER (%)": eer * 100,
+        "APCER (%)": apcer * 100,
+        "BPCER (%)": bpcer * 100,
+        "ACER (%)": acer * 100,
+        "AUC (%)": auc * 100,
+        "ACC (%)": acc * 100
+    }
