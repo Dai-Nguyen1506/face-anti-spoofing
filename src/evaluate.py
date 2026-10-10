@@ -1,10 +1,8 @@
 import os
-import pandas as pd
 from sklearn.metrics import accuracy_score
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.callbacks import Callback
-from keras.models import load_model
 from sklearn.metrics import (
     confusion_matrix, 
     roc_curve, 
@@ -205,3 +203,10 @@ def calculate_metrics(y_true, y_prob, threshold):
         "AUC (%)": auc * 100,
         "ACC (%)": acc * 100
     }
+
+def find_eer_threshold(y_true, y_prob):
+    """Tìm ngưỡng mà APCER = BPCER."""
+    fpr, tpr, thresholds = roc_curve(y_true, y_prob)
+    fnr = 1 - tpr
+    index = np.nanargmin(np.absolute(fnr - fpr))
+    return thresholds[index]

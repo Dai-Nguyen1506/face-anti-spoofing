@@ -4,14 +4,11 @@ import numpy as np
 import tensorflow as tf
 from keras.utils import register_keras_serializable
 
-# Hệ số giảm độ phân giải cho nhánh màu và nhánh RGB toàn cục
-LOW_RES = 2
-
 # Số kênh đầu ra của từng hàm (model dùng để khai báo output_shape)
 TEXTURE_CHANNELS = 11   # 10 (LBP one-hot) + 1 (DoG)
 COLOR_CHANNELS = 6
 FFT_CHANNELS = 2        # log-magnitude + khoảng cách hướng tâm
-SRM_CHANNELS = 3
+SRM_CHANNELS = 9
 
 
 def fft_width(w):
@@ -23,12 +20,6 @@ def fft_width(w):
 def rgb_to_gray(x):
     w = tf.constant([0.299, 0.587, 0.114], dtype=x.dtype)
     return tf.reduce_sum(x * w, axis=-1, keepdims=True)
-
-
-# Giảm độ phân giải (trung bình 2x2) cho nhánh màu và nhánh RGB
-@register_keras_serializable()
-def rgb_downsample(x):
-    return tf.nn.avg_pool2d(x, LOW_RES, LOW_RES, padding="VALID")
 
 
 # Nhánh 1: DoG + LBP - Kết cấu bề mặt
@@ -111,8 +102,7 @@ def _rgb_to_lab_ab(x):
 
 @register_keras_serializable()
 def color_channels(x):
-    """(B, H/2, W/2, 6): [Cr, Cb, S, V, A, B], tính trên ảnh đã giảm một nửa độ phân giải."""
-    x = rgb_downsample(x)
+    """(B, H, W, 6): [Cr, Cb, S, V, A, B]."""
     y = rgb_to_gray(x)
     cr = (x[..., 0:1] - y) * 0.713 + 0.5
     cb = (x[..., 2:3] - y) * 0.564 + 0.5
@@ -169,7 +159,14 @@ _SRM_KERNEL = np.stack(
 
 @register_keras_serializable()
 def srm_channels(x):
-    """(B, H, W, 3): phần dư nhiễu qua 3 bộ lọc SRM cố định, tính trên ảnh xám."""
-    gray = rgb_to_gray(x)
-    gray = tf.pad(gray, [[0, 0], [2, 2], [2, 2], [0, 0]], mode="REFLECT")
-    return tf.nn.conv2d(gray, tf.constant(_SRM_KERNEL, dtype=x.dtype), strides=1, padding="VALID")
+    """(B, H, W, 9): phần dư nhiễu của 3 bộ lọc SRM, tính riêng cho từng kênh R, G, B."""
+    x = x * 255.0
+    x = tf.pad(x, [[0, 0], [2, 2], [2, 2], [0, 0]], mode="REFLECT")
+    kernel = tf.constant(_SRM_KERNEL, dtype=x.dtype)
+
+    r = tf.nn.conv2d(x[..., 0:1], kernel, strides=1, padding="VALID")
+    g = tf.nn.conv2d(x[..., 1:2], kernel, strides=1, padding="VALID")
+    b = tf.nn.conv2d(x[..., 2:3], kernel, strides=1, padding="VALID")
+
+    out = tf.concat([r, g, b], axis=-1)
+    return tf.clip_by_value(out, -2.0, 2.0)

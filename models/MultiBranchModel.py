@@ -12,12 +12,11 @@ import tensorflow as tf
 from keras import Model
 from keras.models import Sequential
 from keras.layers import Concatenate, Layer, Input, Lambda
-from keras.layers import Dense, Conv2D, SeparableConv2D, BatchNormalization, ReLU, Dropout, Normalization
+from keras.layers import Dense, Conv2D, SeparableConv2D, BatchNormalization, ReLU, Dropout
 from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D
 from keras.utils import register_keras_serializable
 
-from src.transforms import texture_channels, color_channels, fft_channels, srm_channels, rgb_downsample
-from src.transforms import LOW_RES, fft_width
+from src.transforms import texture_channels, color_channels, fft_channels, srm_channels, fft_width
 from src.transforms import TEXTURE_CHANNELS, COLOR_CHANNELS, FFT_CHANNELS, SRM_CHANNELS
 
 
@@ -98,6 +97,9 @@ class CBAM(Layer):
         config.update({"channels": self.channels, "r": self.r})
         return config
 
+@register_keras_serializable()
+def stop_grad(x):
+    return tf.stop_gradient(x)
 
 def create_branch(input_shape, name, first_kernel=3, dilation=1):
     """Nhánh CNN nhỏ với 4 khối Conv2D + BN + ReLU. Khối cuối có thể giãn nở (dilation). Cuối cùng là CBAM."""
@@ -142,20 +144,16 @@ def multibranch_model(input_shape=(224, 224, 3), num_classes=1):
 
     # Nhánh 1: Texture (LBP one-hot + DoG)
     texture = Lambda(texture_channels, output_shape=(h, w, TEXTURE_CHANNELS), name="texture_channels")(inputs)
-    texture = Normalization(name="texture_norm")(texture)
     texture_branch = create_branch((h, w, TEXTURE_CHANNELS), name="texture_branch")
     texture_vector = pool(texture_branch(texture))
 
-    # Nhánh 2: Color (Cr, Cb, S, V, A, B)
-    color = Lambda(color_channels, output_shape=(h, w, COLOR_CHANNELS), name="color_channels")(inputs)
-    color = Normalization(name="color_norm")(color)
-    color_branch = create_branch((h, w, COLOR_CHANNELS), name="color_branch")
-    color_vector = pool(color_branch(color))
+    # Nhánh 2: Color
+    color = Lambda(color_channels, output_shape=(h, w, COLOR_CHANNELS))(inputs)
+    color_vector = pool(create_branch((h, w, COLOR_CHANNELS), name="color_branch")(color))
 
-    # Nhánh 3: RGB (conv đầu 7x7 và khối cuối giãn nở -> nhìn toàn cục)
-    rgb_low = Lambda(rgb_downsample, output_shape=(h, w, 3), name="rgb_low")(inputs)
+    # Nhánh 3: RGB (conv đầu 7x7, khối cuối giãn nở)
     rgb_branch = create_branch((h, w, 3), name="rgb_branch", first_kernel=7, dilation=4)
-    rgb_vector = pool(rgb_branch(rgb_low))
+    rgb_vector = pool(rgb_branch(inputs))
 
     # Nhánh 4: FFT (nửa phổ + kênh khoảng cách hướng tâm; đã chuẩn hóa theo từng ảnh trong transform)
     fft = Lambda(fft_channels, output_shape=(h, fft_width(w), FFT_CHANNELS), name="fft_channels")(inputs)
@@ -164,16 +162,15 @@ def multibranch_model(input_shape=(224, 224, 3), num_classes=1):
 
     # Nhánh 5: SRM
     srm = Lambda(srm_channels, output_shape=(h, w, SRM_CHANNELS), name="srm_channels")(inputs)
-    srm = Normalization(name="srm_norm")(srm)
     srm_branch = create_branch((h, w, SRM_CHANNELS), name="srm_branch")
     srm_vector = pool(srm_branch(srm))
 
     # Đầu ra từng nhánh (để so sánh)
-    texture_output = Dense(num_classes, activation="sigmoid", name="texture_output")(texture_vector)
-    color_output = Dense(num_classes, activation="sigmoid", name="color_output")(color_vector)
-    rgb_output = Dense(num_classes, activation="sigmoid", name="rgb_output")(rgb_vector)
-    fft_output = Dense(num_classes, activation="sigmoid", name="fft_output")(fft_vector)
-    srm_output = Dense(num_classes, activation="sigmoid", name="srm_output")(srm_vector)
+    texture_output = Dense(num_classes, activation="sigmoid", name="texture_output")(Lambda(stop_grad)(texture_vector))
+    color_output = Dense(num_classes, activation="sigmoid", name="color_output")(Lambda(stop_grad)(color_vector))
+    rgb_output = Dense(num_classes, activation="sigmoid", name="rgb_output")(Lambda(stop_grad)(rgb_vector))
+    fft_output = Dense(num_classes, activation="sigmoid", name="fft_output")(Lambda(stop_grad)(fft_vector))
+    srm_output = Dense(num_classes, activation="sigmoid", name="srm_output")(Lambda(stop_grad)(srm_vector))
 
     # Ghép các vector của 5 nhánh
     combined_vector = Concatenate(name="combined_vector")([
