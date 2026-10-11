@@ -10,36 +10,37 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay, 
     RocCurveDisplay
 )
-
 class MetricsCallback(Callback):
-    def __init__(self, val_dataset, threshold_path=None, output_name="final_output"):
+    def __init__(self, val_dataset, save_dir="saved_models", output_name="final_output"):
         super().__init__()
         self.val_dataset = val_dataset
-        self.threshold_path = threshold_path
         self.output_name = output_name
+        self.save_dir = save_dir
         self.y_true = np.concatenate([y for x, y in val_dataset], axis=0).flatten()
         self.best_acer = float('inf')
-        self.best_threshold = 0.5
+        
+        # Đảm bảo thư mục lưu tồn tại
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir)
 
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
         
-        # Dự đoán toàn bộ tập Validation (tắt verbose để đỡ rác terminal)
         preds = self.model.predict(self.val_dataset, verbose=0)
-        if isinstance(preds, dict):  # mô hình nhiều đầu ra: lấy đầu ra cuối cùng
+        if isinstance(preds, dict):
             preds = preds[self.output_name]
         y_pred_probs = preds.flatten()
         
-        # Tính toán EER và tìm ngưỡng tối ưu (Threshold)
+        # Tính EER và tìm ngưỡng tối ưu (Threshold)
         fpr, tpr, thresholds = roc_curve(self.y_true, y_pred_probs)
         fnr = 1 - tpr
         eer_index = np.nanargmin(np.absolute((fnr - fpr)))
         eer_threshold = thresholds[eer_index]
+        
         if np.isinf(eer_threshold) or eer_threshold > 1.0:
             eer_threshold = 1.0
-        eer = (fpr[eer_index] + fnr[eer_index]) / 2
         
-        # Phân loại lại dựa trên ngưỡng EER và tính ACER
+        # Tính ACER
         y_pred_bin = (y_pred_probs >= eer_threshold).astype(int)
         tn, fp, fn, tp = confusion_matrix(self.y_true, y_pred_bin).ravel()
         
@@ -49,21 +50,21 @@ class MetricsCallback(Callback):
 
         logs['val_apcer'] = apcer
         logs['val_bpcer'] = bpcer
-        logs['val_eer'] = eer
         logs['val_acer'] = acer
 
         if acer < self.best_acer:
             self.best_acer = acer
-            self.best_threshold = eer_threshold
-    
-            if self.threshold_path:
-                os.makedirs(os.path.dirname(self.threshold_path), exist_ok=True)
-                with open(self.threshold_path, "w") as f:
-                    f.write(str(eer_threshold))
-        
-            print(f" - APCER: {apcer*100:.2f}% - BPCER: {bpcer*100:.2f}% - EER: {eer*100:.2f}% - ACER: {acer*100:.2f}% (t*: {eer_threshold:.4f}) ⭐ NEW BEST")
+
+            model_path = os.path.join(self.save_dir, "best_model.keras")
+            self.model.save(model_path)
+
+            threshold_path = os.path.join(self.save_dir, "best_threshold.txt")
+            with open(threshold_path, "w") as f:
+                f.write(str(eer_threshold))
+                
+            print(f" - APCER: {apcer*100:.2f}% - BPCER: {bpcer*100:.2f}% - ACER: {acer*100:.2f}% (t*: {eer_threshold:.4f}) ⭐ NEW BEST")
         else:
-            print(f" - APCER: {apcer*100:.2f}% - BPCER: {bpcer*100:.2f}% - EER: {eer*100:.2f}% - ACER: {acer*100:.2f}% (t*: {eer_threshold:.4f}) ")
+            print(f" - APCER: {apcer*100:.2f}% - BPCER: {bpcer*100:.2f}% - ACER: {acer*100:.2f}% (t*: {eer_threshold:.4f}) ")
 
 def plot_training_history(history_dict, output=None):
     """Vẽ 3 biểu đồ lịch sử huấn luyện (Loss, Accuracy, Error Rates)"""
@@ -97,10 +98,12 @@ def plot_training_history(history_dict, output=None):
     ax3.grid(True, linestyle='--', alpha=0.6)
         
     plt.tight_layout()
+
     if output is not None:
         os.makedirs(os.path.dirname(output), exist_ok=True)
         plt.savefig(output, dpi=300, bbox_inches='tight')
         print(f"Đã lưu biểu đồ lịch sử tại: {output}")
+
     plt.show()
 
 def evaluate_model(y_test, y_val, threshold, output=None):
@@ -203,10 +206,3 @@ def calculate_metrics(y_true, y_prob, threshold):
         "AUC (%)": auc * 100,
         "ACC (%)": acc * 100
     }
-
-def find_eer_threshold(y_true, y_prob):
-    """Tìm ngưỡng mà APCER = BPCER."""
-    fpr, tpr, thresholds = roc_curve(y_true, y_prob)
-    fnr = 1 - tpr
-    index = np.nanargmin(np.absolute(fnr - fpr))
-    return thresholds[index]

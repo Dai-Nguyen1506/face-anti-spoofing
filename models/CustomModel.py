@@ -1,10 +1,12 @@
 from keras.models import Sequential
-from keras.layers import Input, Conv2D, SeparableConv2D, BatchNormalization, Activation, MaxPooling2D, GlobalAveragePooling2D, Dropout, Dense
+from keras.layers import Input, Conv2D, SeparableConv2D, BatchNormalization, Activation, MaxPooling2D, GlobalAveragePooling2D, Dropout, Dense, Rescaling
 
 def custom_model(input_shape=(224, 224, 3), num_classes=1):
     model = Sequential()
 
     model.add(Input(shape=input_shape))
+
+    model.add(Rescaling(1./255))
 
     model.add(Conv2D(16, (3, 3), strides=2, padding='same', use_bias=False))
     model.add(BatchNormalization())

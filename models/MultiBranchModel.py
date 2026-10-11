@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath('..'))
 import tensorflow as tf
 from keras import Model
 from keras.models import Sequential
-from keras.layers import Concatenate, Layer, Input, Lambda
+from keras.layers import Concatenate, Layer, Input, Lambda, Rescaling
 from keras.layers import Dense, Conv2D, SeparableConv2D, BatchNormalization, ReLU, Dropout
 from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D
 from keras.utils import register_keras_serializable
@@ -106,7 +106,7 @@ def create_branch(input_shape, name, first_kernel=3, dilation=1):
     cnn = Sequential(name=name)
 
     cnn.add(Input(shape=input_shape))
-    cnn.add(BatchNormalization())
+    cnn.add(BatchNormalization(epsilon=1e-5))
 
     # Khối 1
     cnn.add(Conv2D(32, first_kernel, strides=2, padding="same", use_bias=False))
@@ -141,27 +141,28 @@ def multibranch_model(input_shape=(224, 224, 3), num_classes=1):
     h, w, _ = input_shape
 
     inputs = Input(shape=input_shape, name="rgb_input")
+    x = Rescaling(1.0 / 255, name="rescale")(inputs)
 
     # Nhánh 1: Texture (LBP one-hot + DoG)
-    texture = Lambda(texture_channels, output_shape=(h, w, TEXTURE_CHANNELS), name="texture_channels")(inputs)
+    texture = Lambda(texture_channels, output_shape=(h, w, TEXTURE_CHANNELS), name="texture_channels")(x)
     texture_branch = create_branch((h, w, TEXTURE_CHANNELS), name="texture_branch")
     texture_vector = pool(texture_branch(texture))
 
     # Nhánh 2: Color
-    color = Lambda(color_channels, output_shape=(h, w, COLOR_CHANNELS))(inputs)
+    color = Lambda(color_channels, output_shape=(h, w, COLOR_CHANNELS))(x)
     color_vector = pool(create_branch((h, w, COLOR_CHANNELS), name="color_branch")(color))
 
     # Nhánh 3: RGB (conv đầu 7x7, khối cuối giãn nở)
     rgb_branch = create_branch((h, w, 3), name="rgb_branch", first_kernel=7, dilation=4)
-    rgb_vector = pool(rgb_branch(inputs))
+    rgb_vector = pool(rgb_branch(x))
 
     # Nhánh 4: FFT (nửa phổ + kênh khoảng cách hướng tâm; đã chuẩn hóa theo từng ảnh trong transform)
-    fft = Lambda(fft_channels, output_shape=(h, fft_width(w), FFT_CHANNELS), name="fft_channels")(inputs)
+    fft = Lambda(fft_channels, output_shape=(h, fft_width(w), FFT_CHANNELS), name="fft_channels")(x)
     fft_branch = create_branch((h, fft_width(w), FFT_CHANNELS), name="fft_branch")
     fft_vector = pool(fft_branch(fft))
 
     # Nhánh 5: SRM
-    srm = Lambda(srm_channels, output_shape=(h, w, SRM_CHANNELS), name="srm_channels")(inputs)
+    srm = Lambda(srm_channels, output_shape=(h, w, SRM_CHANNELS), name="srm_channels")(x)
     srm_branch = create_branch((h, w, SRM_CHANNELS), name="srm_branch")
     srm_vector = pool(srm_branch(srm))
 
