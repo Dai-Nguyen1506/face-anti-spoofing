@@ -1,140 +1,88 @@
-# Reference: CBAM.
-# https://arxiv.org/pdf/1807.06521
-
-# Reference: Multi-Stream CNN
-# https://link.springer.com/chapter/10.1007/978-3-032-29909-3_43
-
 import os
 import sys
 sys.path.append(os.path.abspath('..'))
 
-import tensorflow as tf
 from keras import Model
-from keras.models import Sequential
-from keras.layers import Concatenate, Layer, Input, Lambda, Rescaling
+from keras.layers import Concatenate, Input, Lambda, Rescaling, Add
 from keras.layers import Dense, Conv2D, SeparableConv2D, BatchNormalization, ReLU, Dropout
-from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D
-from keras.utils import register_keras_serializable
+from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D, AveragePooling2D
 
-from src.transforms import texture_channels, color_channels, fft_channels, srm_channels, fft_width
-from src.transforms import TEXTURE_CHANNELS, COLOR_CHANNELS, FFT_CHANNELS, SRM_CHANNELS
+from src.transforms import color_channels, noise_channels, edge_channels, fft_channels
+
+COLOR_CHANNELS = 9
+NOISE_CHANNELS = 3
+EDGE_CHANNELS = 3
+FFT_CHANNELS = 1
+TRUNK = [(64, 3), (128, 3), (256, 3)]
 
 
 # GAP + GMP
 def pool(f):
-    """Ghép Global Average Pooling và Global Max Pooling: (B, h, w, C) -> (B, 2C)."""
+    """Ghép Global Average Pooling và Global Max Pooling: (B, h, w, C) -> (B, 2C).
+
+    GAP cho cái nhìn chung của cả ảnh, GMP bắt dấu hiệu mạnh nhất ở một vùng nhỏ
+    (dấu vết giả mạo thường chỉ xuất hiện cục bộ).
+    """
     avg = GlobalAveragePooling2D()(f)
     maximum = GlobalMaxPooling2D()(f)
     return Concatenate()([avg, maximum])
 
 
-@register_keras_serializable()
-class SAM(Layer):
-    def __init__(self, bias=False, **kwargs):
-        super(SAM, self).__init__(**kwargs)
-        self.bias = bias
-        self.conv = Conv2D(filters=1, kernel_size=7, strides=1, padding="same",
-                           dilation_rate=1, use_bias=self.bias)
+def residual_block(x, filters, strides=1):
+    """Khối residual: 2 lớp SeparableConv + đường tắt (shortcut)."""
+    # Đường tắt: nếu đổi kích thước hoặc số kênh thì dùng conv 1x1 để khớp lại
+    shortcut = x
+    if strides != 1 or x.shape[-1] != filters:
+        if strides != 1:
+            shortcut = AveragePooling2D(strides, padding="same")(shortcut)
+        shortcut = Conv2D(filters, 1, padding="same", use_bias=False)(shortcut)
+        shortcut = BatchNormalization()(shortcut)
 
-    def call(self, x):
-        max = tf.reduce_max(x, axis=-1, keepdims=True)
-        avg = tf.reduce_mean(x, axis=-1, keepdims=True)
-        concat = tf.concat([max, avg], axis=-1)
-        output = self.conv(concat)
-        output = tf.sigmoid(output) * x
-        return output
+    # Đường chính
+    out = SeparableConv2D(filters, 3, strides=strides, padding="same", use_bias=False)(x)
+    out = BatchNormalization()(out)
+    out = ReLU()(out)
 
-    def get_config(self):
-        config = super().get_config()
-        config.update({"bias": self.bias})
-        return config
+    out = SeparableConv2D(filters, 3, strides=1, padding="same", use_bias=False)(out)
+    out = BatchNormalization()(out)
 
-
-# Channel Attention Module
-@register_keras_serializable()
-class CAM(Layer):
-    def __init__(self, channels, r, **kwargs):
-        super(CAM, self).__init__(**kwargs)
-        self.channels = channels
-        self.r = r
-        self.linear = Sequential([
-            Dense(self.channels // self.r, activation="relu", use_bias=True),
-            Dense(self.channels, use_bias=True),
-        ])
-
-    def call(self, x):
-        max = tf.reduce_max(x, axis=[1, 2])
-        avg = tf.reduce_mean(x, axis=[1, 2])
-        linear_max = tf.reshape(self.linear(max), (-1, 1, 1, self.channels))
-        linear_avg = tf.reshape(self.linear(avg), (-1, 1, 1, self.channels))
-        output = linear_max + linear_avg
-        output = tf.sigmoid(output) * x
-        return output
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({"channels": self.channels, "r": self.r})
-        return config
+    # Cộng hai đường lại
+    out = Add()([out, shortcut])
+    return ReLU()(out)
 
 
-# Convolutional Block Attention Module
-@register_keras_serializable()
-class CBAM(Layer):
-    def __init__(self, channels, r=16, **kwargs):
-        super(CBAM, self).__init__(**kwargs)
-        self.channels = channels
-        self.r = r
-        self.sam = SAM(bias=False)
-        self.cam = CAM(channels=self.channels, r=self.r)
+def create_blocks(x, stages):
+    """Xếp tuần tự nhiều khối residual theo danh sách (số kênh, số khối).
 
-    def call(self, x):
-        output = self.cam(x)
-        output = self.sam(output)
-        return output + x
+    Khối đầu của mỗi giai đoạn giảm kích thước ảnh một nửa, các khối sau giữ nguyên.
+    """
+    for filters, num_blocks in stages:
+        for i in range(num_blocks):
+            strides = 2 if i == 0 else 1
+            x = residual_block(x, filters, strides)
+    return x
 
-    def get_config(self):
-        config = super().get_config()
-        config.update({"channels": self.channels, "r": self.r})
-        return config
 
-@register_keras_serializable()
-def stop_grad(x):
-    return tf.stop_gradient(x)
+def create_trunk(x):
+    """Thân sâu: sau mỗi giai đoạn lấy vector pool rồi ghép lại, để có cả đặc trưng mức thấp lẫn mức cao."""
+    vectors = []
+    for stage in TRUNK:
+        x = create_blocks(x, [stage])
+        vectors.append(pool(x))
+    return Concatenate()(vectors)
 
-def create_branch(input_shape, name, first_kernel=3, dilation=1):
-    """Nhánh CNN nhỏ với 4 khối Conv2D + BN + ReLU. Khối cuối có thể giãn nở (dilation). Cuối cùng là CBAM."""
-    cnn = Sequential(name=name)
 
-    cnn.add(Input(shape=input_shape))
-    cnn.add(BatchNormalization(epsilon=1e-5))
+def create_branch(x):
+    """Nhánh riêng cho từng loại đặc trưng: (h, w) -> (h/4, w/4), 32 kênh."""
+    x = BatchNormalization(epsilon=1e-5)(x)
 
-    # Khối 1
-    cnn.add(Conv2D(32, first_kernel, strides=2, padding="same", use_bias=False))
-    cnn.add(BatchNormalization())
-    cnn.add(ReLU())
+    # Lớp conv đầu (h/2)
+    x = Conv2D(16, 3, strides=2, padding="same", use_bias=False)(x)
+    x = BatchNormalization()(x)
+    x = ReLU()(x)
 
-    # Khối 2
-    cnn.add(SeparableConv2D(64, 3, strides=2, padding="same", use_bias=False))
-    cnn.add(BatchNormalization())
-    cnn.add(ReLU())
-
-    # Khối 3
-    cnn.add(SeparableConv2D(128, 3, strides=2, padding="same", use_bias=False))
-    cnn.add(BatchNormalization())
-    cnn.add(ReLU())
-
-    # Khối 4
-    if dilation > 1:
-        cnn.add(SeparableConv2D(128, 3, strides=1, dilation_rate=dilation, padding="same", use_bias=False))
-    else:
-        cnn.add(SeparableConv2D(128, 3, strides=2, padding="same", use_bias=False))
-    cnn.add(BatchNormalization())
-    cnn.add(ReLU())
-
-    # CBAM
-    cnn.add(CBAM(128))
-
-    return cnn
+    # 1 khối residual (h/4)
+    return create_blocks(x, [(32, 1)])
 
 
 def multibranch_model(input_shape=(224, 224, 3), num_classes=1):
@@ -143,60 +91,39 @@ def multibranch_model(input_shape=(224, 224, 3), num_classes=1):
     inputs = Input(shape=input_shape, name="rgb_input")
     x = Rescaling(1.0 / 255, name="rescale")(inputs)
 
-    # Nhánh 1: Texture (LBP one-hot + DoG)
-    texture = Lambda(texture_channels, output_shape=(h, w, TEXTURE_CHANNELS), name="texture_channels")(x)
-    texture_branch = create_branch((h, w, TEXTURE_CHANNELS), name="texture_branch")
-    texture_vector = pool(texture_branch(texture))
+    # Các kênh đặc trưng cho 4 nhánh
+    color = Lambda(color_channels, output_shape=(h, w, COLOR_CHANNELS), name="color_channels")(x)  # RGB + HSV + YUV
+    noise = Lambda(noise_channels, output_shape=(h, w, NOISE_CHANNELS), name="noise_channels")(x)  # ảnh trừ bản làm mờ
+    edge = Lambda(edge_channels, output_shape=(h, w, EDGE_CHANNELS), name="edge_channels")(x)      # Sobel + độ nhám cục bộ
+    fft = Lambda(fft_channels, output_shape=(h, w, FFT_CHANNELS), name="fft_channels")(x)          # FFT
 
-    # Nhánh 2: Color
-    color = Lambda(color_channels, output_shape=(h, w, COLOR_CHANNELS))(x)
-    color_vector = pool(create_branch((h, w, COLOR_CHANNELS), name="color_branch")(color))
+    # Giai đoạn 1: 4 nhánh riêng, mỗi nhánh học đặc trưng mức thấp của loại thông tin đó
+    color_map = create_branch(color)
+    noise_map = create_branch(noise)
+    edge_map = create_branch(edge)
+    fft_map = create_branch(fft)
 
-    # Nhánh 3: RGB (conv đầu 7x7, khối cuối giãn nở)
-    rgb_branch = create_branch((h, w, 3), name="rgb_branch", first_kernel=7, dilation=4)
-    rgb_vector = pool(rgb_branch(x))
+    # Giai đoạn 2a: gộp Màu + Nhiễu + Cạnh (cùng vị trí trên ảnh gốc) rồi đi qua thân sâu
+    spatial_map = Concatenate(name="spatial_map")([color_map, noise_map, edge_map])
+    spatial_map = Conv2D(64, 1, padding="same", use_bias=False)(spatial_map)   # conv 1x1: trộn 3 nhánh, giảm số kênh
+    spatial_map = BatchNormalization()(spatial_map)
+    spatial_map = ReLU()(spatial_map)
+    spatial_vector = create_trunk(spatial_map)
 
-    # Nhánh 4: FFT (nửa phổ + kênh khoảng cách hướng tâm; đã chuẩn hóa theo từng ảnh trong transform)
-    fft = Lambda(fft_channels, output_shape=(h, fft_width(w), FFT_CHANNELS), name="fft_channels")(x)
-    fft_branch = create_branch((h, fft_width(w), FFT_CHANNELS), name="fft_branch")
-    fft_vector = pool(fft_branch(fft))
+    # Giai đoạn 2b: FFT đi riêng qua một thân sâu khác
+    # (ảnh phổ có trục là tần số chứ không phải vị trí, nên không ghép chồng với ảnh gốc)
+    fft_vector = create_trunk(fft_map)
 
-    # Nhánh 5: SRM
-    srm = Lambda(srm_channels, output_shape=(h, w, SRM_CHANNELS), name="srm_channels")(x)
-    srm_branch = create_branch((h, w, SRM_CHANNELS), name="srm_branch")
-    srm_vector = pool(srm_branch(srm))
-
-    # Đầu ra từng nhánh (để so sánh)
-    texture_output = Dense(num_classes, activation="sigmoid", name="texture_output")(Lambda(stop_grad)(texture_vector))
-    color_output = Dense(num_classes, activation="sigmoid", name="color_output")(Lambda(stop_grad)(color_vector))
-    rgb_output = Dense(num_classes, activation="sigmoid", name="rgb_output")(Lambda(stop_grad)(rgb_vector))
-    fft_output = Dense(num_classes, activation="sigmoid", name="fft_output")(Lambda(stop_grad)(fft_vector))
-    srm_output = Dense(num_classes, activation="sigmoid", name="srm_output")(Lambda(stop_grad)(srm_vector))
-
-    # Ghép các vector của 5 nhánh
+    # Giai đoạn 3: ghép 2 vector ở cuối
     combined_vector = Concatenate(name="combined_vector")([
-        texture_vector,
-        color_vector,
-        rgb_vector,
+        spatial_vector,
         fft_vector,
-        srm_vector,
     ])
 
     x = Dropout(0.3)(combined_vector)
-    x = Dense(256, activation="relu")(x)
+    x = Dense(128, activation="relu")(x)
     x = Dropout(0.2)(x)
     final_output = Dense(num_classes, activation="sigmoid", name="final_output")(x)
 
-    model = Model(
-        inputs=inputs,
-        outputs={
-            "texture_output": texture_output,
-            "color_output": color_output,
-            "rgb_output": rgb_output,
-            "fft_output": fft_output,
-            "srm_output": srm_output,
-            "final_output": final_output,
-        },
-        name="multibranch_model",
-    )
+    model = Model(inputs=inputs, outputs=final_output, name="multibranch_model")
     return model
