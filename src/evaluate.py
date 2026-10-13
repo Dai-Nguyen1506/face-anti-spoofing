@@ -16,8 +16,8 @@ def calculate_metrics(y_true, y_prob, threshold):
     """Tính EER, APCER, BPCER, ACER, AUC, ACC (đơn vị %). Nhãn: real = 0, spoof = 1."""
     y_pred = (y_prob >= threshold).astype(int)
 
-    apcer = np.mean(y_pred[y_true == 1] == 0)   # spoof bị nhận nhầm là real
-    bpcer = np.mean(y_pred[y_true == 0] == 1)   # real bị từ chối nhầm
+    apcer = np.mean(y_pred[y_true == 1] == 0)
+    bpcer = np.mean(y_pred[y_true == 0] == 1)
     acer = (apcer + bpcer) / 2
     acc = np.mean(y_pred == y_true)
     auc = roc_auc_score(y_true, y_prob)

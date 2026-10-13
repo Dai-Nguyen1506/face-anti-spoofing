@@ -1,7 +1,7 @@
 import tensorflow as tf
 from keras.utils import register_keras_serializable
 
-# Nhánh Màu: RGB + HSV + YUV (ảnh vào đã nằm trong [0, 1])
+# Nhánh Màu
 @register_keras_serializable()
 def color_channels(x):
     """(B, H, W, 9): [R, G, B, H, S, V, Y, U, V]."""
@@ -10,7 +10,7 @@ def color_channels(x):
     return tf.concat([x, hsv, yuv], axis=-1)
 
 
-# Nhánh Nhiễu: ảnh trừ bản làm mờ, chỉ còn lại chi tiết nhỏ và nhiễu
+# Nhánh Nhiễu
 @register_keras_serializable()
 def noise_channels(x):
     """(B, H, W, 3): phần dư nhiễu của từng kênh R, G, B."""
@@ -18,7 +18,7 @@ def noise_channels(x):
     return x - blur
 
 
-# Nhánh Cạnh: kết cấu bề mặt bằng Sobel và độ nhám cục bộ
+# Nhánh Cạnh
 @register_keras_serializable()
 def edge_channels(x):
     """(B, H, W, 3): [Sobel dọc, Sobel ngang, độ lệch chuẩn cục bộ] trên ảnh xám."""
@@ -36,7 +36,7 @@ def edge_channels(x):
     return tf.concat([edges, local_std], axis=-1)
 
 
-# Nhánh FFT: tần số không gian
+# Nhánh FFT
 @register_keras_serializable()
 def fft_channels(x):
     """(B, H, W, 1): log-magnitude của FFT trên ảnh xám, tần số thấp được dịch vào giữa."""
